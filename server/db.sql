@@ -1,0 +1,11 @@
+-- server/db.sql
+CREATE DATABASE IF NOT EXISTS mg_db;
+USE mg_db;
+
+CREATE TABLE IF NOT EXISTS highscores (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  player_name VARCHAR(50) NOT NULL,
+  score INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX(score)
+);
