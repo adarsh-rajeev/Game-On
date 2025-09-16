@@ -1,7 +1,7 @@
 
 -> Start Apache and MySQL from your control panel.
 
--> Open in browser: http://localhost/microgame/public/index.html
+-> Open in browser: http://localhost/Game On/public/index.html
 
 -> Importing DB (phpMyAdmin)
    - Open: http://localhost/phpmyadmin

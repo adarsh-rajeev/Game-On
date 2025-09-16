@@ -1,45 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Game</title>
-    <link rel="stylesheet" href="./style.css?v=2" />
+    <title>Micro Game</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="./style.css?v=10" />
   </head>
   <body>
-    <header>
-      <h1>Micro game</h1>
+    <header class="site-header">
+      <h1 class="logo">GAME ON</h1>
     </header>
 
-    <main class="container">
-      <h1>Eat The Square</h1>
-      <canvas id="game" width="640" height="480"></canvas>
+    <!-- AUTH SECTION -->
+    <section id="authSection" class="center-wrapper">
+      <div id="authCard" class="auth-card">
+        <div class="auth-tabs" role="tablist">
+          <button
+            class="auth-tab active"
+            data-tab="login"
+            id="tab-login"
+            aria-selected="true"
+            aria-controls="panel-login"
+          >
+            Login
+          </button>
+          <button
+            class="auth-tab"
+            data-tab="register"
+            id="tab-register"
+            aria-selected="false"
+            aria-controls="panel-register"
+          >
+            Register
+          </button>
+        </div>
 
-      <div id="hud">
-        <div class="row">
-          <button id="startBtn" class="btn">Start</button>
+        <div class="auth-panels">
+          <!-- LOGIN PANEL -->
+          <form
+            id="loginForm"
+            class="auth-form active"
+            aria-labelledby="tab-login"
+            autocomplete="on"
+          >
+            <div class="field">
+              <label for="loginUsername">Username</label>
+              <input
+                id="loginUsername"
+                name="username"
+                type="text"
+                maxlength="50"
+                required
+                autocomplete="username"
+              />
+            </div>
+            <div class="field">
+              <label for="loginPassword">Password</label>
+              <input
+                id="loginPassword"
+                name="password"
+                type="password"
+                maxlength="72"
+                required
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="form-footer">
+              <button id="loginSubmit" type="submit" class="btn primary w-full">
+                Sign In
+              </button>
+              <p class="switch-hint">
+                No account?
+                <button type="button" class="link-btn" data-switch="register">
+                  Create one
+                </button>
+              </p>
+            </div>
+          </form>
+
+          <!-- REGISTER PANEL -->
+          <form
+            id="registerForm"
+            class="auth-form"
+            aria-labelledby="tab-register"
+            autocomplete="on"
+          >
+            <div class="field">
+              <label for="regUsername">Username</label>
+              <input
+                id="regUsername"
+                name="username"
+                type="text"
+                maxlength="50"
+                required
+                autocomplete="username"
+              />
+            </div>
+            <div class="field">
+              <label for="regPassword"
+                >Password <span class="note">(min 6 chars)</span></label
+              >
+              <input
+                id="regPassword"
+                name="password"
+                type="password"
+                minlength="6"
+                maxlength="72"
+                required
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="field">
+              <label for="regPassword2">Confirm Password</label>
+              <input
+                id="regPassword2"
+                name="password2"
+                type="password"
+                minlength="6"
+                maxlength="72"
+                required
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="form-footer">
+              <button
+                id="registerSubmit"
+                type="submit"
+                class="btn accent w-full"
+              >
+                Create Account
+              </button>
+              <p class="switch-hint">
+                Already have an account?
+                <button type="button" class="link-btn" data-switch="login">
+                  Sign in
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+
+        <div id="authMessage" class="auth-message" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- GAME SECTION -->
+    <main id="gameSection" class="game-wrapper" style="display: none">
+      <div class="top-bar">
+        <div class="user-badge">
+          <span id="loggedUser"></span>
+        </div>
+        <div class="game-actions">
+          <button id="startBtn" class="btn primary">Start</button>
           <button id="restartBtn" class="btn" disabled>Restart</button>
           <a class="btn" href="../server/leaderboard.php">Leaderboard</a>
+          <button id="logoutBtn" class="btn danger">Logout</button>
         </div>
-        <div class="row">
-          <label>
-            Name:
-            <input
-              id="playerName"
-              type="text"
-              maxlength="50"
-              placeholder="Enter name"
-            />
-          </label>
-          <button id="submitBtn" class="btn" disabled>Submit Score</button>
-        </div>
-        <div id="status"></div>
       </div>
+
+      <div class="canvas-wrap">
+        <canvas id="game" width="640" height="480"></canvas>
+      </div>
+      <div id="status" class="status-bar"></div>
     </main>
 
-    <footer>
-      <p>&copy; 2024 Adarsh. All rights reserved.</p>
+    <footer class="site-footer">
+      <p>&copy; 2025 Game On</p>
     </footer>
 
-    <script src="./game.js"></script>
+    <script src="./game.js?v=10" defer></script>
   </body>
 </html>
