@@ -18,7 +18,7 @@ Built with **HTML**, **CSS**, **JavaScript**, **PHP**, and **MySQL**.
 ## 🛠 Tech Stack  
 - **Frontend:** `index.html`, `game.js`, `style.css`  
 - **Backend:** `PHP` for server-side logic  
-- **Database:** `MySQL` for storing scores  
+- **Database:** `MySQL` for storing scores and users 
 
 ---
  
