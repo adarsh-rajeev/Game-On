@@ -1,7 +1,7 @@
 <?php
 $DB_HOST = 'localhost';
 $DB_USER = 'root';
-$DB_PASS = 'adarsh70250';          
+$DB_PASS = '9995';          
 $DB_NAME = 'mg_db';
 $db_port = 3306; // default MySQL port
 

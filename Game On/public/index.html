@@ -5,10 +5,207 @@
     <title>Micro Game</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="stylesheet" href="./style.css?v=10" />
+    <style>
+      /* Landing overlay (sits above existing page) */
+      .landing {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        background: radial-gradient(circle at 30% 30%, #132238 0%, #0f172a 70%);
+        color: var(--text);
+      }
+      .landing.hide { display: none; }
+
+      /* Top nav with Login button at top-right */
+      .landing-nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: clamp(0.75rem, 2vw, 1.1rem) clamp(1rem, 3vw, 2rem);
+        background: linear-gradient(180deg, rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0));
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        backdrop-filter: blur(10px);
+      }
+      .brand {
+        display: flex; align-items: center; gap: .6rem;
+        font-weight: 800; letter-spacing: .8px; font-size: clamp(1.1rem, 2vw, 1.35rem);
+      }
+      .brand .dot {
+        width: 10px; height: 10px; border-radius: 999px; background: var(--accent);
+        box-shadow: 0 0 18px var(--accent);
+      }
+      .landing-actions { display: flex; align-items: center; gap: .6rem; }
+      .btn.sm { padding: .5rem .85rem; font-size: .9rem; border-radius: 10px; }
+
+      /* Hero */
+      .landing-hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: clamp(1rem, 3vw, 2rem);
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: clamp(1rem, 3vw, 2rem);
+        flex: 1;
+        width: 100%;
+      }
+      .hero-copy { padding: clamp(.5rem, 2vw, 1rem); position: relative; z-index: 1; }
+      .eyebrow {
+        color: var(--text-dim); text-transform: uppercase; letter-spacing: .35em;
+        font-weight: 700; font-size: .72rem; margin-bottom: .6rem;
+      }
+      .title { margin: 0 0 .5rem; font-size: clamp(1.8rem, 4.5vw, 3rem); line-height: 1.15; font-weight: 800; }
+      .lead { color: var(--text-dim); font-size: clamp(.95rem, 2.2vw, 1.05rem); line-height: 1.65; margin: 0 0 1rem; }
+      .cta { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .6rem; }
+
+      .hero-card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: clamp(.9rem, 2.5vw, 1.25rem);
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+      }
+      .hero-grid { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .feature {
+        background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        padding: .8rem .9rem;
+      }
+      .feature h4 { margin: 0 0 .25rem; font-size: .95rem; letter-spacing: .3px; }
+      .muted { color: var(--text-dim); font-size: .9rem; line-height: 1.5; }
+
+      /* Immersive vector background */
+      .bg-vectors { pointer-events: none; position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+      .blob {
+        position: absolute; filter: blur(30px); opacity: .35; mix-blend-mode: screen;
+        animation: float 16s ease-in-out infinite; will-change: transform;
+      }
+      .blob.one {
+        width: 480px; height: 480px; right: -120px; top: -80px;
+        background: radial-gradient(circle at 30% 30%, #3b82f6, rgba(59,130,246,0) 60%),
+                    radial-gradient(circle at 70% 70%, #10b981, rgba(16,185,129,0) 55%);
+        animation-delay: 0s;
+      }
+      .blob.two {
+        width: 420px; height: 420px; left: -100px; bottom: -100px;
+        background: radial-gradient(circle at 40% 40%, #f59e0b, rgba(245,158,11,0) 60%),
+                    radial-gradient(circle at 70% 30%, #22d3ee, rgba(34,211,238,0) 55%);
+        animation-delay: -4s;
+      }
+      .orb {
+        position: absolute; width: 12px; height: 12px; border-radius: 999px;
+        background: #93c5fd; box-shadow: 0 0 14px #93c5fd;
+        animation: drift 10s linear infinite; opacity: .65;
+      }
+      .orb.a { left: 8%; top: 35%; animation-duration: 13s; }
+      .orb.b { left: 28%; top: 15%; animation-duration: 11s; }
+      .orb.c { right: 22%; top: 20%; animation-duration: 12s; }
+      .orb.d { right: 15%; bottom: 18%; animation-duration: 14s; }
+      @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-22px) scale(1.03)} }
+      @keyframes drift { 0%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-22px) translateX(10px)} 100%{transform:translateY(0) translateX(0)} }
+
+      /* Subtle grid overlay */
+      .grid {
+        position: absolute; inset: 0;
+        background-image:
+          linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(ellipse at center, rgba(0,0,0,.5), transparent 70%);
+        pointer-events: none;
+      }
+
+      .landing-footer {
+        text-align: center; color: var(--text-dim); font-size: .8rem;
+        padding: 1.2rem 1rem 1.8rem;
+      }
+
+      @media (max-width: 900px) {
+        .landing-hero { grid-template-columns: 1fr; }
+      }
+    </style>
   </head>
   <body>
+    <!-- Immersive landing overlay -->
+    <div id="landing" class="landing" role="dialog" aria-label="Game On landing">
+      <div class="bg-vectors" aria-hidden="true">
+        <div class="blob one"></div>
+        <div class="blob two"></div>
+        <div class="orb a"></div>
+        <div class="orb b"></div>
+        <div class="orb c"></div>
+        <div class="orb d"></div>
+        <div class="grid"></div>
+      </div>
+
+      <nav class="landing-nav">
+        <div class="brand">
+          <span class="dot" aria-hidden="true"></span>
+          <span>GAME ON</span>
+        </div>
+        <div class="landing-actions">
+          <a class="btn sm" href="../server/leaderboard.php">Leaderboard</a>
+          <!-- Top-right Login button -->
+          <a class="btn primary sm" href="#" data-enter>Login</a>
+        </div>
+      </nav>
+
+      <header class="landing-hero" role="banner">
+        <div class="hero-copy">
+          <div class="eyebrow">Arcade survival</div>
+          <h1 class="title">Dash. Collect. Survive. Face a mini‑boss every 5 levels.</h1>
+          <p class="lead">
+            Game On is a fast, stylish browser arcade where you weave through hazards,
+            chain orb combos, and use power‑ups to outlast the clock. Master the dash,
+            build score multipliers, and defeat escalating mini‑bosses.
+          </p>
+          <div class="cta">
+            <a class="btn accent" href="#" data-enter>Play Now</a>
+            <a class="btn" href="../server/leaderboard.php">View Leaderboard</a>
+          </div>
+        </div>
+
+        <aside class="hero-card">
+          <div class="hero-grid">
+            <div class="feature">
+              <h4>Mini‑Boss Rounds</h4>
+              <p class="muted">Every 5 levels brings a boss with radial bursts, aimed shots, and a gentle enrage.</p>
+            </div>
+            <div class="feature">
+              <h4>Combo Orbs</h4>
+              <p class="muted">Collect orbs fast to grow your combo and rack up massive points with a 2x multiplier.</p>
+            </div>
+            <div class="feature">
+              <h4>Power‑Ups</h4>
+              <p class="muted">Shield, slow‑time, healing, and score boost help you survive and score higher.</p>
+            </div>
+            <div class="feature">
+              <h4>Skillful Dash</h4>
+              <p class="muted">Invulnerable dash to dodge bullets, damage enemies, and even chunk the boss.</p>
+            </div>
+          </div>
+        </aside>
+      </header>
+
+      <footer class="landing-footer">
+        <div>&copy; 2025 Game On — Built by Adarsh R</div>
+      </footer>
+    </div>
+    <!-- End landing overlay -->
+
     <header class="site-header">
-      <h1 class="logo">GAME ON</h1>
+      
+      <a id="homeBtn" class="btn" href="#" title="Home">Game On</a>
     </header>
 
     <!-- AUTH SECTION -->
@@ -169,5 +366,47 @@
     </footer>
 
     <script src="./game.js?v=10" defer></script>
+    <script>
+      // Landing overlay controller: hide on Login/Play, auto-hide if already signed in
+      (function () {
+        const landing = document.getElementById('landing');
+        function enter() {
+          landing && landing.classList.add('hide');
+          // focus login input
+          setTimeout(() => {
+            const u = document.getElementById('loginUsername');
+            if (u) u.focus();
+          }, 0);
+        }
+        // click handlers
+        document.querySelectorAll('[data-enter]').forEach(el => {
+          el.addEventListener('click', (e) => { e.preventDefault(); enter(); });
+        });
+        // Auto-hide if returning user already has username
+        try {
+          if (localStorage.getItem('username')) {
+            enter();
+          }
+        } catch (_) {}
+      })();
+    </script>
+
+    <script>
+      // Show landing overlay when Home button clicked
+      (function () {
+        const home = document.getElementById('homeBtn');
+        const landing = document.getElementById('landing');
+        if (!home || !landing) return;
+        home.addEventListener('click', (e) => {
+          e.preventDefault();
+          landing.classList.remove('hide');
+          // focus the primary action in the landing overlay for accessibility
+          setTimeout(() => {
+            const first = landing.querySelector('[data-enter]') || landing.querySelector('a,button');
+            if (first) first.focus();
+          }, 0);
+        });
+      })();
+    </script>
   </body>
 </html>

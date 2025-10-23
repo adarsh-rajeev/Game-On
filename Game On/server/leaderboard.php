@@ -198,7 +198,7 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
 
       <div style="display:flex;flex-wrap:wrap;justify-content:space-between;font-size:.62rem;color:#94a3b8;letter-spacing:.09em;margin-top:.6rem;">
         <span>Higher score overwrites your previous entry.</span>
-        <span>&copy; <?php echo date('Y'); ?> Micro Game</span>
+        <span>&copy; <?php echo date('Y'); ?> Game On</span>
       </div>
     </div>
   </div>
