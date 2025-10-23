@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Micro Game</title>
+    <title>Game On</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="stylesheet" href="./style.css?v=10" />
+    <link rel="stylesheet" href="./style.css?v=16" />
     <style>
-      /* Landing overlay (sits above existing page) */
+      /* Landing overlay (kept — hero you liked) */
       .landing {
         position: fixed;
         inset: 0;
@@ -18,7 +18,6 @@
       }
       .landing.hide { display: none; }
 
-      /* Top nav with Login button at top-right */
       .landing-nav {
         position: sticky;
         top: 0;
@@ -40,9 +39,8 @@
         box-shadow: 0 0 18px var(--accent);
       }
       .landing-actions { display: flex; align-items: center; gap: .6rem; }
-      .btn.sm { padding: .5rem .85rem; font-size: .9rem; border-radius: 10px; }
+      .btn.sm { padding: .5rem .85rem; font-size: .9rem; border-radius: 11px; }
 
-      /* Hero */
       .landing-hero {
         position: relative;
         display: grid;
@@ -69,7 +67,7 @@
         border: 1px solid var(--card-border);
         border-radius: 16px;
         padding: clamp(.9rem, 2.5vw, 1.25rem);
-        box-shadow: var(--shadow);
+        box-shadow: var(--shadow-strong);
         position: relative;
         overflow: hidden;
         z-index: 1;
@@ -84,7 +82,6 @@
       .feature h4 { margin: 0 0 .25rem; font-size: .95rem; letter-spacing: .3px; }
       .muted { color: var(--text-dim); font-size: .9rem; line-height: 1.5; }
 
-      /* Immersive vector background */
       .bg-vectors { pointer-events: none; position: absolute; inset: 0; overflow: hidden; z-index: 0; }
       .blob {
         position: absolute; filter: blur(30px); opacity: .35; mix-blend-mode: screen;
@@ -114,7 +111,6 @@
       @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-22px) scale(1.03)} }
       @keyframes drift { 0%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-22px) translateX(10px)} 100%{transform:translateY(0) translateX(0)} }
 
-      /* Subtle grid overlay */
       .grid {
         position: absolute; inset: 0;
         background-image:
@@ -136,7 +132,7 @@
     </style>
   </head>
   <body>
-    <!-- Immersive landing overlay -->
+    <!-- Landing overlay -->
     <div id="landing" class="landing" role="dialog" aria-label="Game On landing">
       <div class="bg-vectors" aria-hidden="true">
         <div class="blob one"></div>
@@ -155,7 +151,6 @@
         </div>
         <div class="landing-actions">
           <a class="btn sm" href="../server/leaderboard.php">Leaderboard</a>
-          <!-- Top-right Login button -->
           <a class="btn primary sm" href="#" data-enter>Login</a>
         </div>
       </nav>
@@ -203,135 +198,76 @@
     </div>
     <!-- End landing overlay -->
 
-    <header class="site-header">
-      
-      <a id="homeBtn" class="btn" href="#" title="Home">Game On</a>
+    <!-- App nav -->
+    <header class="app-nav" role="navigation" aria-label="Game On navigation">
+      <div class="nav-inner">
+        <div class="brand">
+          <span class="dot" aria-hidden="true"></span>
+          <span>GAME ON</span>
+        </div>
+        <div class="nav-actions">
+          <a class="btn glass sm" href="../server/leaderboard.php">Leaderboard</a>
+          <button id="homeBtn" class="btn glass sm" title="Home">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>Home</span>
+          </button>
+        </div>
+      </div>
     </header>
 
     <!-- AUTH SECTION -->
     <section id="authSection" class="center-wrapper">
-      <div id="authCard" class="auth-card">
+      <div id="authCard" class="auth-card" aria-live="polite">
+        <div class="auth-head">
+          <div class="ring"><span class="ring-core"></span></div>
+          <div>
+            <h2 class="auth-title">Welcome Back</h2>
+            <p class="auth-sub">Sign in to continue your arcade adventure</p>
+          </div>
+        </div>
+
         <div class="auth-tabs" role="tablist">
-          <button
-            class="auth-tab active"
-            data-tab="login"
-            id="tab-login"
-            aria-selected="true"
-            aria-controls="panel-login"
-          >
-            Login
-          </button>
-          <button
-            class="auth-tab"
-            data-tab="register"
-            id="tab-register"
-            aria-selected="false"
-            aria-controls="panel-register"
-          >
-            Register
-          </button>
+          <button class="auth-tab active" data-tab="login" id="tab-login" aria-selected="true">Login</button>
+          <button class="auth-tab" data-tab="register" id="tab-register" aria-selected="false">Register</button>
         </div>
 
         <div class="auth-panels">
-          <!-- LOGIN PANEL -->
-          <form
-            id="loginForm"
-            class="auth-form active"
-            aria-labelledby="tab-login"
-            autocomplete="on"
-          >
+          <form id="loginForm" class="auth-form active" autocomplete="on">
             <div class="field">
               <label for="loginUsername">Username</label>
-              <input
-                id="loginUsername"
-                name="username"
-                type="text"
-                maxlength="50"
-                required
-                autocomplete="username"
-              />
+              <input id="loginUsername" name="username" type="text" maxlength="50" required autocomplete="username" />
             </div>
             <div class="field">
               <label for="loginPassword">Password</label>
-              <input
-                id="loginPassword"
-                name="password"
-                type="password"
-                maxlength="72"
-                required
-                autocomplete="current-password"
-              />
+              <input id="loginPassword" name="password" type="password" maxlength="72" required autocomplete="current-password" />
             </div>
             <div class="form-footer">
-              <button id="loginSubmit" type="submit" class="btn primary w-full">
-                Sign In
-              </button>
-              <p class="switch-hint">
-                No account?
-                <button type="button" class="link-btn" data-switch="register">
-                  Create one
-                </button>
+              <button id="loginSubmit" type="submit" class="btn primary w-full glow">Sign In</button>
+              <p class="switch-hint">No account?
+                <button type="button" class="link-btn" data-switch="register">Create one</button>
               </p>
             </div>
           </form>
 
-          <!-- REGISTER PANEL -->
-          <form
-            id="registerForm"
-            class="auth-form"
-            aria-labelledby="tab-register"
-            autocomplete="on"
-          >
+          <form id="registerForm" class="auth-form" autocomplete="on">
             <div class="field">
               <label for="regUsername">Username</label>
-              <input
-                id="regUsername"
-                name="username"
-                type="text"
-                maxlength="50"
-                required
-                autocomplete="username"
-              />
+              <input id="regUsername" name="username" type="text" maxlength="50" required autocomplete="username" />
             </div>
             <div class="field">
-              <label for="regPassword"
-                >Password <span class="note">(min 6 chars)</span></label
-              >
-              <input
-                id="regPassword"
-                name="password"
-                type="password"
-                minlength="6"
-                maxlength="72"
-                required
-                autocomplete="new-password"
-              />
+              <label for="regPassword">Password <span class="note">(min 6 chars)</span></label>
+              <input id="regPassword" name="password" type="password" minlength="6" maxlength="72" required autocomplete="new-password" />
             </div>
             <div class="field">
               <label for="regPassword2">Confirm Password</label>
-              <input
-                id="regPassword2"
-                name="password2"
-                type="password"
-                minlength="6"
-                maxlength="72"
-                required
-                autocomplete="new-password"
-              />
+              <input id="regPassword2" name="password2" type="password" minlength="6" maxlength="72" required autocomplete="new-password" />
             </div>
             <div class="form-footer">
-              <button
-                id="registerSubmit"
-                type="submit"
-                class="btn accent w-full"
-              >
-                Create Account
-              </button>
-              <p class="switch-hint">
-                Already have an account?
-                <button type="button" class="link-btn" data-switch="login">
-                  Sign in
-                </button>
+              <button id="registerSubmit" type="submit" class="btn accent w-full glow">Create Account</button>
+              <p class="switch-hint">Already have an account?
+                <button type="button" class="link-btn" data-switch="login">Sign in</button>
               </p>
             </div>
           </form>
@@ -355,7 +291,7 @@
         </div>
       </div>
 
-      <div class="canvas-wrap">
+      <div id="canvasWrap" class="canvas-wrap">
         <canvas id="game" width="640" height="480"></canvas>
       </div>
       <div id="status" class="status-bar"></div>
@@ -365,34 +301,28 @@
       <p>&copy; 2025 Game On</p>
     </footer>
 
-    <script src="./game.js?v=10" defer></script>
+    <script src="./game.js?v=12" defer></script>
+
     <script>
       // Landing overlay controller: hide on Login/Play, auto-hide if already signed in
       (function () {
         const landing = document.getElementById('landing');
         function enter() {
           landing && landing.classList.add('hide');
-          // focus login input
           setTimeout(() => {
             const u = document.getElementById('loginUsername');
             if (u) u.focus();
           }, 0);
         }
-        // click handlers
         document.querySelectorAll('[data-enter]').forEach(el => {
           el.addEventListener('click', (e) => { e.preventDefault(); enter(); });
         });
-        // Auto-hide if returning user already has username
         try {
-          if (localStorage.getItem('username')) {
-            enter();
-          }
+          if (localStorage.getItem('username')) enter();
         } catch (_) {}
       })();
-    </script>
 
-    <script>
-      // Show landing overlay when Home button clicked
+      // Home -> show landing
       (function () {
         const home = document.getElementById('homeBtn');
         const landing = document.getElementById('landing');
@@ -400,7 +330,6 @@
         home.addEventListener('click', (e) => {
           e.preventDefault();
           landing.classList.remove('hide');
-          // focus the primary action in the landing overlay for accessibility
           setTimeout(() => {
             const first = landing.querySelector('[data-enter]') || landing.querySelector('a,button');
             if (first) first.focus();

@@ -116,41 +116,153 @@ $conn->close();
 <meta charset="UTF-8" />
 <title>Leaderboard</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="stylesheet" href="../public/style.css?lb=3">
+<link rel="stylesheet" href="../public/style.css?lb=4">
 <style>
-/* (Same styles as previous version – trimmed for brevity) */
-/* You can keep your existing inlined styles. If you removed them earlier, paste the
-   full style block from the previous message here. For clarity, only essential parts kept. */
+/* Page base */
 body.lb-body {
-  min-height:100vh;background:radial-gradient(circle at 30% 30%,#132238 0%,#0f172a 70%);
-  margin:0;color:var(--text,#e2e8f0);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
+  min-height:100vh;
+  background:
+    radial-gradient(1100px 600px at 82% 12%, rgba(59,130,246,0.16), transparent 60%),
+    radial-gradient(900px 700px at 12% 88%, rgba(16,185,129,0.14), transparent 65%),
+    radial-gradient(circle at 30% 30%, #132238 0%, #0f172a 70%);
+  margin:0;
+  color:var(--text,#e2e8f0);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
-.lb-wrapper{max-width:1200px;margin:0 auto;padding:clamp(1.1rem,2vw,2.2rem)}
-.lb-card{background:linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.015));
-backdrop-filter:blur(18px)saturate(160%);border:1px solid rgba(255,255,255,0.12);border-radius:22px;
-padding:1.4rem 1.6rem 1.8rem;box-shadow:0 6px 26px -8px rgba(0,0,0,0.55),0 3px 10px -2px rgba(0,0,0,0.45);
-display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;position:relative;overflow:hidden}
+
+/* Vectors: blobs, orbs, grid (like landing/auth) */
+.lb-vectors { pointer-events:none; position:fixed; inset:0; z-index:0; overflow:hidden; }
+.lb-blob {
+  position:absolute; filter: blur(36px); opacity:.35; mix-blend-mode: screen;
+  animation: lbFloat 18s ease-in-out infinite; will-change: transform;
+}
+.lb-blob.a {
+  width: 520px; height: 520px; right: -120px; top: -80px;
+  background:
+    radial-gradient(circle at 30% 30%, #3b82f6, rgba(59,130,246,0) 60%),
+    radial-gradient(circle at 70% 70%, #10b981, rgba(16,185,129,0) 55%);
+}
+.lb-blob.b {
+  width: 440px; height: 440px; left: -120px; bottom: -120px;
+  background:
+    radial-gradient(circle at 40% 40%, #f59e0b, rgba(245,158,11,0) 60%),
+    radial-gradient(circle at 70% 30%, #22d3ee, rgba(34,211,238,0) 55%);
+  animation-delay: -4s;
+}
+@keyframes lbFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+
+.lb-orb {
+  position:absolute; width: 10px; height: 10px; border-radius:999px;
+  background:#93c5fd; box-shadow:0 0 14px #93c5fd; opacity:.65;
+  animation: lbDrift 10s linear infinite;
+}
+.lb-orb.o1{ left: 12%; top: 22%; animation-duration: 12s; }
+.lb-orb.o2{ left: 28%; top: 12%; animation-duration: 11s; }
+.lb-orb.o3{ right: 22%; top: 20%; animation-duration: 13s; }
+.lb-orb.o4{ right: 14%; bottom: 22%; animation-duration: 14s; }
+@keyframes lbDrift { 0%{transform:translate(0,0)} 50%{transform:translate(10px,-16px)} 100%{transform:translate(0,0)} }
+
+.lb-grid {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 70%);
+}
+
+/* Layout */
+.lb-wrapper{max-width:1200px;margin:0 auto;padding:clamp(1.1rem,2vw,2.2rem); position:relative; z-index:1;}
+.lb-card{
+  background:linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.015));
+  backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:22px;
+  padding:1.4rem 1.6rem 1.8rem;
+  box-shadow:0 6px 26px -8px rgba(0,0,0,0.55),0 3px 10px -2px rgba(0,0,0,0.45);
+  display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;position:relative;overflow:hidden
+}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-/* Keep the rest of the CSS from the earlier improved version if you want full styling */
+
+/* Buttons: remove underline + hover spotlight + lift */
+a.btn, a.btn:link, a.btn:visited { text-decoration: none; }
+.btn { position: relative; overflow: hidden; }
+.btn::before {
+  content:'';
+  position:absolute; inset:0;
+  background: radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.24), transparent 40%);
+  opacity:0; transition: opacity .22s ease; pointer-events:none;
+}
+.btn:hover::before{ opacity:.22; }
+.btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,0.35); }
+
+/* Small variant to match top-right controls */
+.btn.small { padding:.45rem .75rem; font-size:.85rem; border-radius:10px; }
+
+/* Controls row */
+.lb-controls{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;justify-content:space-between}
+.lb-meta{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;display:flex;flex-wrap:wrap;gap:1.1rem;font-weight:600}
+
+/* Inputs */
+.lb-input{
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.2);
+  padding:.55rem .75rem;color:#e2e8f0;border-radius:10px;outline:none;
+  width:200px;font:inherit;font-size:.75rem;transition:box-shadow .2s ease,transform .2s ease,background .2s ease;
+}
+.lb-input:focus{
+  box-shadow:0 0 0 3px rgba(56,189,248,0.25),0 6px 16px rgba(56,189,248,0.15);
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.10);
+}
+
+/* Table */
+.lb-table-wrap{overflow:auto;border:1px solid rgba(255,255,255,0.1);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015));}
+table.lb-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem;min-width:640px}
+table.lb-table thead tr{background:#17263c;color:#94a3b8;font-size:.68rem;letter-spacing:.15em;text-align:left}
+table.lb-table th,table.lb-table td{padding:.65rem .75rem}
+table.lb-table td strong{color:#e2e8f0}
+
+/* Footer details */
+.lb-foot{display:flex;flex-wrap:wrap;justify-content:space-between;font-size:.62rem;color:#94a3b8;letter-spacing:.09em;margin-top:.6rem}
+
+/* Small trophy icon spacing */
+.lb-title{display:flex;align-items:center;gap:.6rem;margin:0 0 .5rem;font-size:1.9rem;letter-spacing:.5px}
+.lb-title .t{font-size:1.1rem}
+
+/* Utility */
+.hidden{display:none!important}
 </style>
 </head>
 <body class="lb-body">
+  <!-- Vector background -->
+  <div class="lb-vectors" aria-hidden="true">
+    <div class="lb-blob a"></div>
+    <div class="lb-blob b"></div>
+    <span class="lb-orb o1"></span>
+    <span class="lb-orb o2"></span>
+    <span class="lb-orb o3"></span>
+    <span class="lb-orb o4"></span>
+    <div class="lb-grid"></div>
+  </div>
+
   <div class="lb-wrapper">
     <div class="lb-card">
-      <h1 style="margin:0 0 .5rem;font-size:1.9rem;letter-spacing:.5px;display:flex;align-items:center;gap:.6rem;">🏆 Leaderboard</h1>
-      <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;justify-content:space-between">
-        <div style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;display:flex;flex-wrap:wrap;gap:1.1rem;font-weight:600">
-          <span>Total Players: <strong style="color:#e2e8f0"><?php echo $totalPlayers; ?></strong></span>
-          <span>Showing Top <strong style="color:#e2e8f0"><?php echo count($rows); ?></strong></span>
-          <span id="lastUpdated">Loaded: <strong style="color:#e2e8f0"><?php echo date('H:i:s'); ?></strong></span>
+      <h1 class="lb-title">🏆 <span>Leaderboard</span></h1>
+
+      <div class="lb-controls">
+        <div class="lb-meta">
+          <span>TOTAL PLAYERS: <strong style="color:#e2e8f0"><?php echo $totalPlayers; ?></strong></span>
+          <span>SHOWING TOP <strong style="color:#e2e8f0"><?php echo count($rows); ?></strong></span>
+          <span id="lastUpdated">LOADED: <strong style="color:#e2e8f0"><?php echo date('H:i:s'); ?></strong></span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center">
-          <div style="position:relative">
-            <input id="filterInput" placeholder="Search user..." aria-label="Filter usernames"
-                   style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);padding:.55rem .75rem;color:#e2e8f0;border-radius:10px;outline:none;width:200px;font:inherit;font-size:.75rem">
-          </div>
-          <button class="btn small" id="refreshBtn">Refresh</button>
-          <a class="btn small" href="../public/index.html">Back to Game</a>
+          <input id="filterInput" class="lb-input" placeholder="Search user..." aria-label="Filter usernames">
+          <button class="btn small glass" id="refreshBtn">Refresh</button>
+          <!-- Back to Game without underline, styled as glass button -->
+          <a class="btn small glass" id="backBtn" href="../public/index.html">Back to Game</a>
         </div>
       </div>
 
@@ -161,14 +273,14 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
         </div>
       <?php endif; ?>
 
-      <div style="overflow:auto;border:1px solid rgba(255,255,255,0.1);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015));">
-        <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem;min-width:640px" id="lbTable">
+      <div class="lb-table-wrap">
+        <table class="lb-table" id="lbTable">
           <thead>
-            <tr style="background:#17263c;color:#94a3b8;font-size:.68rem;letter-spacing:.15em;text-align:left">
-              <th style="padding:.65rem .75rem;width:80px;">Rank</th>
-              <th style="padding:.65rem .75rem;">Username</th>
-              <th style="padding:.65rem .75rem;width:120px;">Score</th>
-              <th style="padding:.65rem .75rem;width:170px;">When</th>
+            <tr>
+              <th style="width:80px;">Rank</th>
+              <th>Username</th>
+              <th style="width:120px;">Score</th>
+              <th style="width:170px;">When</th>
             </tr>
           </thead>
           <tbody id="lbBody">
@@ -182,13 +294,13 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
                 $medal = $i===1?'🥇':($i===2?'🥈':($i===3?'🥉':''));
                 $isYou = ($userParam !== '' && strcasecmp($r['username'],$userParam)===0);
                 echo '<tr data-username="'.esc(strtolower($r['username'])).'"'.
-                     ($isYou?' style="background:linear-gradient(90deg,rgba(56,189,248,0.25),rgba(59,130,246,0.05))"':'').'>';
-                echo '<td style="padding:.55rem .75rem;font-weight:600;display:flex;align-items:center;gap:.4rem;">'.$i.
-                     ($medal?'<span style="font-size:1rem">'.$medal.'</span>':'').'</td>';
-                echo '<td style="padding:.55rem .75rem;"><strong>'.esc($r['username']).'</strong></td>';
-                echo '<td style="padding:.55rem .75rem;font-weight:600;color:#93c5fd;">'.(int)$r['score'].'</td>';
-                echo '<td style="padding:.55rem .75rem;"><small data-time="'.esc($r['created_at']).'">'.esc($r['created_at']).'</small></td>';
-                echo '</tr>';
+                     ($isYou?' style="background:linear-gradient(90deg,rgba(56,189,248,0.25),rgba(59,130,246,0.05))"':'').'>'.
+                     '<td style="font-weight:600;display:flex;align-items:center;gap:.4rem;">'.$i.
+                     ($medal?'<span style="font-size:1rem">'.$medal.'</span>':'').'</td>'.
+                     '<td><strong>'.esc($r['username']).'</strong></td>'.
+                     '<td style="font-weight:600;color:#93c5fd;">'.(int)$r['score'].'</td>'.
+                     '<td><small data-time="'.esc($r['created_at']).'">'.esc($r['created_at']).'</small></td>'.
+                     '</tr>';
               }
             }
           ?>
@@ -196,7 +308,7 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
         </table>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;font-size:.62rem;color:#94a3b8;letter-spacing:.09em;margin-top:.6rem;">
+      <div class="lb-foot">
         <span>Higher score overwrites your previous entry.</span>
         <span>&copy; <?php echo date('Y'); ?> Game On</span>
       </div>
@@ -211,6 +323,15 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
   const lastUpdatedEl = document.getElementById('lastUpdated');
   const userParam = new URLSearchParams(location.search).get('user') || '';
   let refreshing = false;
+
+  // Button hover spotlight (matches app buttons)
+  document.querySelectorAll('.btn').forEach(btn=>{
+    btn.addEventListener('pointermove', e=>{
+      const r = btn.getBoundingClientRect();
+      btn.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      btn.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    });
+  });
 
   function relTime(isoLike){
     const d = new Date(isoLike.replace(' ','T'));
@@ -258,10 +379,10 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
         const medal = r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':'';
         const youClass = (userParam && r.username.toLowerCase()===userParam.toLowerCase());
         return `<tr data-username="${escapeHtml(r.username.toLowerCase())}" ${youClass?'style="background:linear-gradient(90deg,rgba(56,189,248,0.25),rgba(59,130,246,0.05))"':''}>
-          <td style="padding:.55rem .75rem;font-weight:600;display:flex;align-items:center;gap:.4rem;">${r.rank}${medal?`<span style="font-size:1rem">${medal}</span>`:''}</td>
-          <td style="padding:.55rem .75rem;"><strong>${escapeHtml(r.username)}</strong></td>
-          <td style="padding:.55rem .75rem;font-weight:600;color:#93c5fd;">${r.score}</td>
-          <td style="padding:.55rem .75rem;"><small data-time="${escapeHtml(r.created_at)}">${escapeHtml(r.created_at)}</small></td>
+          <td style="font-weight:600;display:flex;align-items:center;gap:.4rem;">${r.rank}${medal?`<span style="font-size:1rem">${medal}</span>`:''}</td>
+          <td><strong>${escapeHtml(r.username)}</strong></td>
+          <td style="font-weight:600;color:#93c5fd;">${r.score}</td>
+          <td><small data-time="${escapeHtml(r.created_at)}">${escapeHtml(r.created_at)}</small></td>
         </tr>`;
       }).join('') : '<tr><td colspan="4" style="padding:2rem 1rem;text-align:center;color:#94a3b8;font-size:.8rem;">No scores yet.</td></tr>';
 
@@ -270,7 +391,7 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
         const you = tbody.querySelector('[data-username="'+CSS.escape(userParam.toLowerCase())+'"]');
         you && you.scrollIntoView({block:'nearest'});
       }
-      lastUpdatedEl && (lastUpdatedEl.innerHTML='Loaded: <strong>'+new Date().toLocaleTimeString()+'</strong>');
+      lastUpdatedEl && (lastUpdatedEl.innerHTML='LOADED: <strong>'+new Date().toLocaleTimeString()+'</strong>');
     }catch(err){
       alert('Refresh failed: '+err.message);
     }finally{
@@ -290,6 +411,10 @@ display:flex;flex-direction:column;gap:1.15rem;animation:fadeIn .55s ease;positi
     you && you.scrollIntoView({block:'nearest'});
   }
 })();
+</script>
+<script>
+  // Remove underline from any legacy link styles (safety)
+  document.querySelectorAll('a').forEach(a => a.style.textDecoration = 'none');
 </script>
 </body>
 </html>

@@ -1,0 +1,157 @@
+/* Enhanced button hover effects with mouse tracking */
+.btn.enhanced {
+  --x: 50%;
+  --y: 50%;
+}
+
+.btn.enhanced:hover .btn-particles {
+  background: radial-gradient(circle at var(--x) var(--y), 
+    rgba(255,255,255,0.4) 0%, 
+    rgba(255,255,255,0.1) 40%,
+    transparent 70%);
+}
+
+/* Add particle burst effect on click */
+@keyframes particleBurst {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.btn.enhanced:active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--x) var(--y), 
+    rgba(255,255,255,0.6) 0%, 
+    transparent 50%);
+  animation: particleBurst 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* Enhanced input focus effects */
+.input-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, 
+    transparent 0%,
+    rgba(56,189,248,0.1) 25%,
+    rgba(59,130,246,0.1) 50%,
+    rgba(16,185,129,0.1) 75%,
+    transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.field input:focus ~ .input-wrapper::after {
+  opacity: 1;
+}
+
+/* Floating animation for auth card */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.auth-card {
+  animation: cardEnter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), 
+             float 6s ease-in-out infinite 1s;
+}
+
+/* Enhanced logo animations */
+.logo-center svg {
+  animation: logoIconSpin 4s ease-in-out infinite;
+}
+
+@keyframes logoIconSpin {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.1); }
+  50% { transform: rotate(180deg) scale(1); }
+  75% { transform: rotate(270deg) scale(1.1); }
+}
+
+/* Gradient text animations */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.auth-title {
+  background: linear-gradient(-45deg, 
+    var(--text), 
+    var(--primary), 
+    var(--accent), 
+    var(--focus));
+  background-size: 400% 400%;
+  animation: gradientShift 3s ease infinite;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Interactive hover effects for shapes */
+.shape {
+  transition: all 0.3s ease;
+}
+
+.shape:hover {
+  transform: scale(1.2);
+  opacity: 0.2;
+}
+
+/* Enhanced ripple effect for home button */
+.home-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.home-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, 
+    rgba(255,255,255,0.2) 0%, 
+    transparent 70%);
+  transform: scale(0);
+  transition: transform 0.6s ease;
+  border-radius: 16px;
+}
+
+.home-btn:active::before {
+  transform: scale(1);
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: transform, opacity, box-shadow, background, border-color;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Performance optimizations */
+.auth-card,
+.floating-shapes,
+.shape,
+.btn,
+.input-wrapper,
+.home-btn {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
