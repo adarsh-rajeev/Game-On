@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>Game On</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="stylesheet" href="./style.css?v=16" />
+    <link rel="stylesheet" href="./style.css?v=17" />
     <style>
       /* Landing overlay (kept — hero you liked) */
       .landing {
@@ -158,7 +158,7 @@
       <header class="landing-hero" role="banner">
         <div class="hero-copy">
           <div class="eyebrow">Arcade survival</div>
-          <h1 class="title">Dash. Collect. Survive. Face a mini‑boss every 5 levels.</h1>
+          <h1 class="title">Dash. Collect. Survive. Face a mini‑boss every 6 levels.</h1>
           <p class="lead">
             Game On is a fast, stylish browser arcade where you weave through hazards,
             chain orb combos, and use power‑ups to outlast the clock. Master the dash,
@@ -174,7 +174,7 @@
           <div class="hero-grid">
             <div class="feature">
               <h4>Mini‑Boss Rounds</h4>
-              <p class="muted">Every 5 levels brings a boss with radial bursts, aimed shots, and a gentle enrage.</p>
+              <p class="muted">Every 6 levels brings a boss with radial bursts, aimed shots, and a gentle enrage.</p>
             </div>
             <div class="feature">
               <h4>Combo Orbs</h4>
@@ -286,6 +286,7 @@
         <div class="game-actions">
           <button id="startBtn" class="btn primary">Start</button>
           <button id="restartBtn" class="btn" disabled>Restart</button>
+          <button id="storeBtn" class="btn accent">Store</button>
           <a class="btn" href="../server/leaderboard.php">Leaderboard</a>
           <button id="logoutBtn" class="btn danger">Logout</button>
         </div>
@@ -301,7 +302,68 @@
       <p>&copy; 2025 Game On</p>
     </footer>
 
-    <script src="./game.js?v=12" defer></script>
+    <!-- Store Modal (Demo purchases) -->
+    <div id="storeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="storeTitle" aria-hidden="true">
+      <div class="modal-backdrop" data-close-store></div>
+      <div class="modal-card store-card" role="document">
+        <div class="modal-head">
+          <h3 id="storeTitle" class="modal-title">In‑Game Store <span class="badge-demo">Demo</span></h3>
+          <button class="btn glass sm" title="Close" data-close-store>&times;</button>
+        </div>
+        <p class="modal-sub">Try purchasing items below. This is a demo — no real transactions.</p>
+        <div class="store-grid">
+          <div class="store-item">
+            <div class="icon">❤️</div>
+            <div class="meta">
+              <h4>Health +1</h4>
+              <p>Get an extra heart to keep fighting.</p>
+            </div>
+            <div class="buy">
+              <span class="price">₹49</span>
+              <button class="btn primary sm buy-btn" data-item="Health +1">Buy</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div class="icon">🛡️</div>
+            <div class="meta">
+              <h4>Shield</h4>
+              <p>Absorb the next hit automatically.</p>
+            </div>
+            <div class="buy">
+              <span class="price">₹59</span>
+              <button class="btn primary sm buy-btn" data-item="Shield">Buy</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div class="icon">⏭️</div>
+            <div class="meta">
+              <h4>Skip Level</h4>
+              <p>Jump straight to the next level.</p>
+            </div>
+            <div class="buy">
+              <span class="price">₹79</span>
+              <button class="btn primary sm buy-btn" data-item="Skip Level">Buy</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div class="icon">✨</div>
+            <div class="meta">
+              <h4>Regen Boost</h4>
+              <p>Gradually recover a heart over time.</p>
+            </div>
+            <div class="buy">
+              <span class="price">₹69</span>
+              <button class="btn primary sm buy-btn" data-item="Regen Boost">Buy</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <small class="muted">Purchases are disabled in this demo build.</small>
+        </div>
+      </div>
+    </div>
+
+    <script src="./game.js?v=13" defer></script>
 
     <script>
       // Landing overlay controller: hide on Login/Play, auto-hide if already signed in
@@ -334,6 +396,46 @@
             const first = landing.querySelector('[data-enter]') || landing.querySelector('a,button');
             if (first) first.focus();
           }, 0);
+        });
+      })();
+
+      // Store modal (demo)
+      (function () {
+        const modal = document.getElementById('storeModal');
+        const openBtn = document.getElementById('storeBtn');
+        if (!modal || !openBtn) return;
+
+        function openStore() {
+          modal.setAttribute('aria-hidden','false');
+          modal.classList.add('open');
+          document.dispatchEvent(new CustomEvent('game:pause'));
+          const firstBuy = modal.querySelector('.buy-btn');
+          firstBuy && firstBuy.focus();
+        }
+        function closeStore() {
+          modal.classList.remove('open');
+          modal.setAttribute('aria-hidden','true');
+          document.dispatchEvent(new CustomEvent('game:resume'));
+          openBtn && openBtn.focus();
+        }
+
+        openBtn.addEventListener('click', (e) => { e.preventDefault(); openStore(); });
+        modal.addEventListener('click', (e) => {
+          if (e.target && e.target.closest('[data-close-store]')) closeStore();
+        });
+        document.addEventListener('keydown', (e) => {
+          if (!modal.classList.contains('open')) return;
+          if (e.key === 'Escape') closeStore();
+        });
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal.querySelector('.modal-backdrop')) closeStore();
+        });
+
+        modal.querySelectorAll('.buy-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const item = btn.getAttribute('data-item') || 'Item';
+            alert(`Demo purchase\\n\\nPurchases are disabled in this demo build.\\nYou tapped: ${item}`);
+          });
         });
       })();
     </script>

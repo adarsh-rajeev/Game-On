@@ -1,13 +1,19 @@
 /* 
   Game On
-  Version: 1.6.4 (Robust init + safe loop + Boss HP HUD + softer difficulty)
+  Version: 1.7.0 (Fix key error + store integration + bigger canvas + iconified enemies)
 
-  What changed in 1.6.4:
-  - Initialize strictly after window 'load' so the canvas and all nodes exist.
-  - Validate 2D context; if missing, show a helpful message.
-  - Safe game loop: catches render/update exceptions and shows an on-canvas error so it never "just goes black".
-  - Boss HP bar preserved and drawn during boss levels.
-  - Softer difficulty settings preserved.
+  Changes in 1.7.0:
+  - Fix sporadic "e.toLowerCase is not a function" by hardening key handling.
+  - Integrate Store (demo) purchases:
+      • Capture buy button clicks, prevent default alert, show a nice popup "Item dropped".
+      • Immediately activate purchased item in game:
+         - Health +1  -> +1 heart (or +120 bonus if already full)
+         - Shield      -> grants shield
+         - Skip Level  -> completes current level (or finishes boss)
+         - Regen Boost -> grants +1 heart after a short delay (8s)
+      • Pause/Resume game when store opens/closes via custom events (game:pause/resume).
+  - Make canvas a little bigger (800x600) without touching HTML.
+  - Make enemy cubes nicer by overlaying simple icons.
 */
 
 window.addEventListener("load", () => {
@@ -49,6 +55,17 @@ window.addEventListener("load", () => {
     }
     // Optional: crisper retro look
     ctx.imageSmoothingEnabled = false;
+
+    // Make canvas a bit bigger without editing HTML
+    (function ensureCanvasSize() {
+      const targetW = 800, targetH = 600;
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+        canvas.style.width = targetW + "px";
+        canvas.style.height = targetH + "px";
+      }
+    })();
 
     const API = {
       login: "../server/login.php",
@@ -121,6 +138,7 @@ window.addEventListener("load", () => {
       showGameUI();
     }
 
+    /* ---------- Auth handlers ---------- */
     loginForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const u = loginUsername.value.trim();
@@ -180,7 +198,7 @@ window.addEventListener("load", () => {
      * CONFIG (softer) + STATE
      ***********************/
     const G = {
-      version: "1.6.4",
+      version: "1.7.0",
       baseOrbValue: 10,
       comboWindow: 2.8,
       dashSpeed: 3.9,
@@ -246,6 +264,8 @@ window.addEventListener("load", () => {
       boss: null,
       bossBullets: [],
       bossWeakOrbs: [],
+      // Store-related
+      regenGainAt: 0,
     };
 
     const player = {
@@ -261,17 +281,29 @@ window.addEventListener("load", () => {
       invulnUntil: 0,
     };
 
+    /* ---------- Input (hardened) ---------- */
     const keys = {};
+    function keyString(e) { return (e && typeof e.key !== "undefined") ? String(e.key) : ""; }
+    function keyLower(e) {
+      const k = keyString(e);
+      try { return k.toLowerCase(); } catch { return k; }
+    }
+
     window.addEventListener("keydown", (e) => {
-      keys[e.key] = true;
-      if (e.key === " " && STATE.runState === "RUN") togglePause();
-      else if (e.key === " " && STATE.runState === "PAUSED") togglePause();
-      else if (e.key.toLowerCase() === "m") STATE.muted = !STATE.muted;
-      else if (e.key.toLowerCase() === "l") STATE.lowGfx = !STATE.lowGfx;
-      else if (e.key.toLowerCase() === "r" && STATE.runState === "GAME_OVER") quickRestart();
-      else if (e.key === "Enter" && STATE.runState === "LEVEL_CLEAR") nextLevel();
+      const k = keyString(e);
+      const kl = keyLower(e);
+      if (k === " " && STATE.runState === "RUN") togglePause();
+      else if (k === " " && STATE.runState === "PAUSED") togglePause();
+      else if (kl === "m") STATE.muted = !STATE.muted;
+      else if (kl === "l") STATE.lowGfx = !STATE.lowGfx;
+      else if (kl === "r" && STATE.runState === "GAME_OVER") quickRestart();
+      else if (k === "Enter" && STATE.runState === "LEVEL_CLEAR") nextLevel();
+      if (k) keys[k] = true;
     });
-    window.addEventListener("keyup", (e) => (keys[e.key] = false));
+    window.addEventListener("keyup", (e) => {
+      const k = keyString(e);
+      if (k) keys[k] = false;
+    });
 
     /* Utils */
     function rand(a, b) { return Math.random() * (b - a) + a; }
@@ -400,7 +432,7 @@ window.addEventListener("load", () => {
       if (b.weakOrbTimer > 3.8) { b.weakOrbTimer = 0; spawnBossWeakOrb(); }
 
       for (const orb of STATE.bossWeakOrbs) {
-        orb.pulse += 0.05;
+        orb.pulse += 0.05; 
         const pdx = player.x + player.w / 2 - orb.x, pdy = player.y + player.h / 2 - orb.y;
         if (pdx * pdx + pdy * pdy <= (orb.r + player.w * 0.4) ** 2) {
           b.hp -= orb.damage;
@@ -491,7 +523,7 @@ window.addEventListener("load", () => {
       STATE.runState = "RUN";
       STATE.level = 1; STATE.score = 0; STATE.hearts = 3; STATE.shield = 0;
       STATE.slowUntil = 0; STATE.multiplierUntil = 0; STATE.combo = 0;
-      STATE.lostHeartAnims.length = 0;
+      STATE.lostHeartAnims.length = 0; STATE.regenGainAt = 0;
       centerPlayer(); setupLevel(); grantStartImmortality();
       if (statusEl) statusEl.textContent = "Level 1 - Go!";
       if (restartBtn) restartBtn.disabled = true;
@@ -576,6 +608,17 @@ window.addEventListener("load", () => {
       }
     }
 
+    function drawEnemyIcon(cx, cy, type) {
+      // Small icon overlay to make cubes look nicer
+      const icon = type === "patrol" ? "◆" : type === "chaser" ? "👾" : "🎯";
+      ctx.save();
+      ctx.font = "14px system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillText(icon, cx, cy);
+      ctx.restore();
+    }
+
     function drawEnemies(t) {
       if (isBossLevel()) return;
       for (const e of STATE.enemies) {
@@ -583,16 +626,20 @@ window.addEventListener("load", () => {
         if (e.type === "patrol") {
           ctx.fillStyle = e.color; ctx.fillRect(e.x, e.y, e.w, e.h);
           if (!STATE.lowGfx) { ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.strokeRect(e.x, e.y, e.w, e.h); }
+          drawEnemyIcon(e.x + e.w / 2, e.y + e.h / 2, "patrol");
         } else if (e.type === "chaser") {
           ctx.translate(e.x + e.w / 2, e.y + e.h / 2); ctx.rotate(e.angle);
           ctx.fillStyle = e.color; ctx.fillRect(-e.w / 2, -e.h / 2, e.w, e.h);
           ctx.fillStyle = "#1e293b"; ctx.fillRect(2, -4, 6, 8);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          drawEnemyIcon(e.x + e.w / 2, e.y + e.h / 2, "chaser");
         }
         ctx.restore();
       }
       for (const turr of STATE.turrets) {
         ctx.fillStyle = turr.color; ctx.fillRect(turr.x - turr.w / 2, turr.y - turr.h / 2, turr.w, turr.h);
         ctx.fillStyle = "#1e293b"; ctx.fillRect(turr.x - 6, turr.y - 6, 12, 12);
+        drawEnemyIcon(turr.x, turr.y, "turret");
       }
       for (const b of STATE.bullets) { ctx.beginPath(); ctx.fillStyle = b.color; ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill(); }
     }
@@ -690,6 +737,10 @@ window.addEventListener("load", () => {
       ctx.fillText("Dash " + (dashReady ? "READY" : (STATE.dashReadyAt - t).toFixed(1) + "s"), 10, py); py += 20;
       const remainImmune = player.invulnUntil - t;
       if (remainImmune > 0.05) { ctx.fillStyle = "#fbbf24"; ctx.fillText(`Immune: ${remainImmune.toFixed(1)}s`, 10, py); py += 20; }
+      if (STATE.regenGainAt > t) {
+        ctx.fillStyle = "#bbf7d0";
+        ctx.fillText(`Regen ${(STATE.regenGainAt - t).toFixed(1)}s`, 10, py); py += 20;
+      }
 
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       if (STATE.runState === "MENU") {
@@ -964,7 +1015,25 @@ window.addEventListener("load", () => {
       }
     }
 
-    function updateTimers(dt) { if (STATE.runState === "RUN") { STATE.timeRemaining -= dt; if (STATE.timeRemaining <= 0) gameOver(); } }
+    function updateTimers(dt) { 
+      if (STATE.runState === "RUN") { 
+        STATE.timeRemaining -= dt; 
+        if (STATE.timeRemaining <= 0) gameOver(); 
+      }
+      const t = now();
+      if (STATE.regenGainAt && t >= STATE.regenGainAt) {
+        STATE.regenGainAt = 0;
+        if (STATE.hearts < G.maxHearts) {
+          STATE.hearts++;
+          addFloatingText("+1 REGEN", player.x, player.y - 18, "#bbf7d0");
+          spawnBurst(player.x + player.w/2, player.y + player.h/2, "#bbf7d0", 18);
+          beep(680, 0.12, 0.25, "triangle");
+        } else {
+          STATE.score += 120;
+          addFloatingText("+120 BONUS", player.x, player.y - 18, "#bbf7d0");
+        }
+      }
+    }
     function updateParticles(dt) { for (const p of STATE.particles) { p.x += p.vx; p.y += p.vy; p.life -= dt; } STATE.particles = STATE.particles.filter(p => p.life > 0); }
     function updateFloatingTexts(dt) { for (const ft of STATE.floatingTexts) { ft.y -= dt * 18; ft.life -= dt; } STATE.floatingTexts = STATE.floatingTexts.filter(ft => ft.life > 0); }
     function updateLostHeartAnims(dt) { for (const h of STATE.lostHeartAnims) h.age += dt; STATE.lostHeartAnims = STATE.lostHeartAnims.filter(h => h.age < h.life); }
@@ -984,6 +1053,89 @@ window.addEventListener("load", () => {
       }
     });
 
+    /* -------- Store integration -------- */
+    let pausedByStore = false;
+    document.addEventListener("game:pause", () => {
+      if (STATE.runState === "RUN") {
+        STATE.runState = "PAUSED";
+        pausedByStore = true;
+      }
+    });
+    document.addEventListener("game:resume", () => {
+      if (pausedByStore && STATE.gameStarted && STATE.runState === "PAUSED") {
+        STATE.runState = "RUN";
+      }
+      pausedByStore = false;
+    });
+
+    function showStorePopup(message, good = true) {
+      const modal = document.getElementById("storeModal");
+      if (!modal) return;
+      const host = modal.querySelector(".modal-card") || modal;
+      const note = document.createElement("div");
+      note.textContent = message;
+      note.setAttribute("role", "status");
+      note.style.cssText = `
+        position: absolute; right: 16px; top: 16px;
+        background: ${good ? "rgba(16,185,129,0.18)" : "rgba(220,38,38,0.18)"};
+        border: 1px solid ${good ? "rgba(16,185,129,0.35)" : "rgba(220,38,38,0.35)"};
+        color: ${good ? "#d1fae5" : "#fecaca"};
+        padding: .5rem .75rem; border-radius: 10px;
+        font-weight: 900; letter-spacing: .03em; backdrop-filter: blur(6px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      `;
+      host.appendChild(note);
+      setTimeout(() => { note.style.opacity = "0"; note.style.transform = "translateY(-6px)"; }, 1000);
+      setTimeout(() => { note.remove(); }, 1400);
+    }
+
+    function handlePurchase(itemLabel) {
+      const t = now();
+      const label = String(itemLabel || "Item");
+      // Cosmetic: "Item dropped" message and burst at player
+      addFloatingText(`Item dropped: ${label}`, player.x - 18, player.y - 26, "#bbf7d0", 1.6);
+      spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#93c5fd", 18);
+      beep(560, 0.09, 0.22, "triangle");
+      showStorePopup(`Item dropped: ${label}`);
+
+      // Activate effect immediately
+      const low = label.toLowerCase();
+      if (low.includes("health")) {
+        if (STATE.hearts < G.maxHearts) {
+          STATE.hearts++;
+          addFloatingText("+1 HEART", player.x, player.y - 12, "#bbf7d0");
+        } else {
+          STATE.score += 120; addFloatingText("+120 BONUS", player.x, player.y - 12, "#10b981");
+        }
+      } else if (low.includes("shield")) {
+        STATE.shield = 1;
+        addFloatingText("SHIELD", player.x, player.y - 12, G.shieldColor);
+      } else if (low.includes("skip")) {
+        if (STATE.runState === "RUN") {
+          if (isBossLevel() && STATE.boss) {
+            STATE.boss.hp = 0.01; // will finish in update
+          } else {
+            STATE.orbsCollectedThisLevel = STATE.orbsNeeded;
+            levelComplete();
+          }
+        }
+      } else if (low.includes("regen")) {
+        STATE.regenGainAt = t + 8; // heart after 8 seconds
+        addFloatingText("REGEN 8s", player.x, player.y - 12, "#bbf7d0");
+      }
+    }
+
+    // Capture buy button clicks BEFORE the inline page handler (prevent alert)
+    document.addEventListener("click", (ev) => {
+      const btn = ev.target && ev.target.closest && ev.target.closest(".buy-btn");
+      if (!btn) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      const item = btn.getAttribute("data-item") || "Item";
+      handlePurchase(item);
+    }, true);
+
     // Start loop
     loop();
 
@@ -992,7 +1144,7 @@ window.addEventListener("load", () => {
       fatalErrorText = e.message || "Unknown error";
     });
 
-    console.log("[READY] 1.6.4 initialized.");
+    console.log("[READY] 1.7.0 initialized.");
   } catch (err) {
     console.error("[FATAL INIT ERROR]", err);
     alert("Game failed to initialize: " + (err && err.message ? err.message : err));
